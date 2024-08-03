@@ -58,7 +58,7 @@ const Page = (props: Props) => {
 					MunchMaestro
 				</h1>
 			</div>
-			<Stack gap={4} sx={{ mb: 0 }}>
+			{/* <Stack gap={4} sx={{ mb: 0 }}>
               <Button
                 variant="soft"
                 color="neutral"
@@ -78,7 +78,7 @@ const Page = (props: Props) => {
               })}
             >
               or
-            </Divider>
+            </Divider> */}
 			<div className="flex flex-col gap-6">
 				<div>
 					<label htmlFor="email" className="text-lg">
