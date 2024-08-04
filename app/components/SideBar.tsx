@@ -4,34 +4,20 @@ import * as React from "react";
 import GlobalStyles from "@mui/joy/GlobalStyles";
 import Avatar from "@mui/joy/Avatar";
 import Box from "@mui/joy/Box";
-import Button from "@mui/joy/Button";
-import Card from "@mui/joy/Card";
-import Chip from "@mui/joy/Chip";
 import Divider from "@mui/joy/Divider";
 import IconButton from "@mui/joy/IconButton";
-import Input from "@mui/joy/Input";
-import LinearProgress from "@mui/joy/LinearProgress";
 import List from "@mui/joy/List";
 import ListItem from "@mui/joy/ListItem";
 import ListItemButton, { listItemButtonClasses } from "@mui/joy/ListItemButton";
 import ListItemContent from "@mui/joy/ListItemContent";
 import Typography from "@mui/joy/Typography";
 import Sheet from "@mui/joy/Sheet";
-import Stack from "@mui/joy/Stack";
-import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
-import ShoppingCartRoundedIcon from "@mui/icons-material/ShoppingCartRounded";
-import AssignmentRoundedIcon from "@mui/icons-material/AssignmentRounded";
-import QuestionAnswerRoundedIcon from "@mui/icons-material/QuestionAnswerRounded";
 import GroupRoundedIcon from "@mui/icons-material/GroupRounded";
-import SupportRoundedIcon from "@mui/icons-material/SupportRounded";
-import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
-import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
-import BrightnessAutoRoundedIcon from "@mui/icons-material/BrightnessAutoRounded";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import { FoodBankTwoTone, NoFoodTwoTone } from "@mui/icons-material";
+import { FoodBankTwoTone } from "@mui/icons-material";
 import Tooltip from "@mui/joy/Tooltip";
 
 import { useState } from "react";
@@ -42,6 +28,7 @@ import { closeSidebar } from "../utils";
 import { signOut } from "firebase/auth";
 import { font } from "@/lib/font";
 import { auth } from "@/lib/firebase";
+import { useAuth } from "@/hooks/useAuth";
 
 function Toggler({
 	defaultExpanded = false,
@@ -83,6 +70,8 @@ interface Error {
 export default function Sidebar() {
 	const [error, setError] = useState<Error>();
 	const router = useRouter();
+
+	const { user, loading } = useAuth();
 
 	const logOut = () => {
 		signOut(auth)
@@ -184,7 +173,9 @@ export default function Sidebar() {
 							<ListItemButton>
 								<HomeRoundedIcon />
 								<ListItemContent>
-									<Typography level="title-sm">Home</Typography>
+									<Typography level="title-sm">
+										Home
+									</Typography>
 								</ListItemContent>
 							</ListItemButton>
 						</ListItem>
@@ -243,7 +234,7 @@ export default function Sidebar() {
             </Toggler>
           </ListItem> */}
 
-					<ListItem nested>
+					{/* <ListItem nested>
 						<Toggler
 							renderToggle={({ open, setOpen }) => (
 								<ListItemButton onClick={() => setOpen(!open)}>
@@ -275,20 +266,25 @@ export default function Sidebar() {
 								</ListItem>
 							</List>
 						</Toggler>
-					</ListItem>
+					</ListItem> */}
 				</List>
 			</Box>
 			<Divider />
 			<Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-				<Avatar
-					variant="outlined"
+				<IconButton
 					size="sm"
-					src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=286"
-				/>
-				<Box sx={{ minWidth: 0, flex: 1 }}>
-					<Typography level="title-sm">Siriwat K.</Typography>
-					<Typography level="body-xs">siriwatk@test.com</Typography>
-				</Box>
+					variant="outlined"
+					color="neutral"
+				>
+					{user?.email?.[0]?.toUpperCase()}
+				</IconButton>
+				{/* <Box sx={{ minWidth: 0, flex: 1 }}> */}
+					{/* <Typography level="title-sm">
+						{user?.displayName}
+					</Typography> */}
+					<Typography level="body-xs">{user?.email}</Typography>
+				{/* </Box> */}
+			</Box>
 				<Tooltip
 					title="Sign out"
 					variant="plain"
@@ -305,7 +301,6 @@ export default function Sidebar() {
 						<LogoutRoundedIcon />
 					</IconButton>
 				</Tooltip>
-			</Box>
 		</Sheet>
 	);
 }

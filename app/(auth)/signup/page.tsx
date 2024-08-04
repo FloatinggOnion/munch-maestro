@@ -58,7 +58,7 @@ const Page = (props: Props) => {
 	};
 
 	return (
-		<div className="flex flex-col p-6 justify-center lg:justify-between h-screen md:w-[75%] lg:h-full gap-8 lg:w-[45vw] mx-auto my-auto">
+		<div className="flex flex-col p-6 justify-center lg:justify-between h-screen md:w-[75%] lg:h-[85vh] gap-8 lg:w-[45vw] mx-auto my-auto">
 			<div>
                 <h2 className="text-center text-xl">Sign up for</h2>
                 <h1
@@ -67,6 +67,7 @@ const Page = (props: Props) => {
                     MunchMaestro
                 </h1>
             </div>
+			{/* When you uncomment this, change the lg:h-[75vh] to lg:h-full for the entire container */}
 			{/* <Stack gap={4} sx={{ mb: 0 }}>
               <Button
                 variant="soft"

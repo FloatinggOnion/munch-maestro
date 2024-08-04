@@ -27,70 +27,24 @@ import AutorenewRoundedIcon from '@mui/icons-material/AutorenewRounded';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 
-const listItems = [
-  {
-    id: 'INV-1234',
-    date: 'Feb 3, 2023',
-    status: 'Refunded',
-    customer: {
-      initial: 'O',
-      name: 'Olivia Ryhe',
-      email: 'olivia@email.com',
-    },
-  },
-  {
-    id: 'INV-1233',
-    date: 'Feb 3, 2023',
-    status: 'Paid',
-    customer: {
-      initial: 'S',
-      name: 'Steve Hampton',
-      email: 'steve.hamp@email.com',
-    },
-  },
-  {
-    id: 'INV-1232',
-    date: 'Feb 3, 2023',
-    status: 'Refunded',
-    customer: {
-      initial: 'C',
-      name: 'Ciaran Murray',
-      email: 'ciaran.murray@email.com',
-    },
-  },
-  {
-    id: 'INV-1231',
-    date: 'Feb 3, 2023',
-    status: 'Refunded',
-    customer: {
-      initial: 'M',
-      name: 'Maria Macdonald',
-      email: 'maria.mc@email.com',
-    },
-  },
-  {
-    id: 'INV-1230',
-    date: 'Feb 3, 2023',
-    status: 'Cancelled',
-    customer: {
-      initial: 'C',
-      name: 'Charles Fulton',
-      email: 'fulton@email.com',
-    },
-  },
-  {
-    id: 'INV-1229',
-    date: 'Feb 3, 2023',
-    status: 'Cancelled',
-    customer: {
-      initial: 'J',
-      name: 'Jay Hooper',
-      email: 'hooper@email.com',
-    },
-  },
-];
 
-function RowMenu() {
+interface Inventory {
+  id: string;
+  date: Date;
+  itemName: string;
+  quantity: number;
+}
+
+type Props = {
+  onClick: (item: Inventory) => Promise<void>;
+  rows?: Inventory[];
+  page: number;
+  rowsPerPage: number;
+  totalItems: number;
+  onPageChange: (newPage: number) => void;
+};
+
+function RowMenu({ onClick, item }: { onClick: (item: Inventory) => Promise<void>; item: Inventory }) {
   return (
     <Dropdown>
       <MenuButton
@@ -100,20 +54,33 @@ function RowMenu() {
         <MoreHorizRoundedIcon />
       </MenuButton>
       <Menu size="sm" sx={{ minWidth: 140 }}>
-        <MenuItem>Edit</MenuItem>
+        {/* <MenuItem>Edit</MenuItem>
         <MenuItem>Rename</MenuItem>
-        <MenuItem>Move</MenuItem>
+        <MenuItem>Move</MenuItem> */}
         <Divider />
-        <MenuItem color="danger">Delete</MenuItem>
+        <MenuItem color="danger" onClick={() => onClick(item)}>Delete</MenuItem>
       </Menu>
     </Dropdown>
   );
 }
 
-export default function OrderList() {
+export default function OrderList(props: Props) {
+
+  const handlePreviousPage = () => {
+    if (props.page > 1) {
+      props.onPageChange(props.page - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (props.page < Math.ceil(props.totalItems / props.rowsPerPage)) {
+      props.onPageChange(props.page + 1);
+    }
+  };
+
   return (
-    <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
-      {listItems.map((listItem) => (
+    <Box sx={{ display: { xs: 'block', sm: 'block', md: 'none' }, width: '90vw' }}>
+      {props.rows?.map((listItem) => (
         <List
           key={listItem.id}
           size="sm"
@@ -129,15 +96,15 @@ export default function OrderList() {
             }}
           >
             <ListItemContent sx={{ display: 'flex', gap: 2, alignItems: 'start' }}>
-              <ListItemDecorator>
+              {/* <ListItemDecorator>
                 <Avatar size="sm">{listItem.customer.initial}</Avatar>
-              </ListItemDecorator>
+              </ListItemDecorator> */}
               <div>
                 <Typography fontWeight={600} gutterBottom>
-                  {listItem.customer.name}
+                  {listItem.itemName}
                 </Typography>
                 <Typography level="body-xs" gutterBottom>
-                  {listItem.customer.email}
+                  Qty: {listItem.quantity}
                 </Typography>
                 <Box
                   sx={{
@@ -148,15 +115,15 @@ export default function OrderList() {
                     mb: 1,
                   }}
                 >
-                  <Typography level="body-xs">{listItem.date}</Typography>
+                  <Typography level="body-xs">{listItem.date.toDateString()}</Typography>
                   <Typography level="body-xs">&bull;</Typography>
-                  <Typography level="body-xs">{listItem.id}</Typography>
+                  <Typography level="body-xs">{listItem.date.toLocaleTimeString()}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                   <Link level="body-sm" component="button">
                     Download
                   </Link>
-                  <RowMenu />
+                  <RowMenu onClick={props.onClick} item={listItem} />
                 </Box>
               </div>
             </ListItemContent>
@@ -165,20 +132,20 @@ export default function OrderList() {
               size="sm"
               startDecorator={
                 {
-                  Paid: <CheckRoundedIcon />,
-                  Refunded: <AutorenewRoundedIcon />,
-                  Cancelled: <BlockIcon />,
-                }[listItem.status]
+                  High: <CheckRoundedIcon />,
+                  Medium: <AutorenewRoundedIcon />,
+                  Low: <BlockIcon />,
+                }[listItem.quantity <= 2 ? "Low" : listItem.quantity > 2 && listItem.quantity < 5 ? "Medium" : "High"]
               }
               color={
                 {
-                  Paid: 'success',
-                  Refunded: 'neutral',
-                  Cancelled: 'danger',
-                }[listItem.status] as ColorPaletteProp
+                  High: 'success',
+                  Medium: 'neutral',
+                  Low: 'danger',
+                }[listItem.quantity <= 2 ? "Low" : listItem.quantity > 2 && listItem.quantity < 5 ? "Medium" : "High"] as ColorPaletteProp
               }
             >
-              {listItem.status}
+              {listItem.quantity <= 2 ? "Low" : listItem.quantity > 2 && listItem.quantity < 5 ? "Medium" : "High"}
             </Chip>
           </ListItem>
           <ListDivider />
@@ -193,17 +160,21 @@ export default function OrderList() {
           variant="outlined"
           color="neutral"
           size="sm"
+          onClick={handlePreviousPage}
+          disabled={props.page === 1}
         >
           <KeyboardArrowLeftIcon />
         </IconButton>
         <Typography level="body-sm" mx="auto">
-          Page 1 of 10
+          Page {props.page} of {Math.ceil(props.totalItems / props.rowsPerPage)}
         </Typography>
         <IconButton
           aria-label="next page"
           variant="outlined"
           color="neutral"
           size="sm"
+          onClick={handleNextPage}
+          disabled={props.page === Math.ceil(props.totalItems / props.rowsPerPage)}
         >
           <KeyboardArrowRightIcon />
         </IconButton>
