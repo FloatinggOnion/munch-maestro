@@ -39,6 +39,7 @@ import MoreHorizRoundedIcon from "@mui/icons-material/MoreHorizRounded";
 
 interface Inventory {
 	id: string;
+	userId: string | undefined;
 	date: Date;
 	itemName: string;
 	quantity: number;

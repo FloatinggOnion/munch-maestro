@@ -30,6 +30,7 @@ import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 
 interface Inventory {
   id: string;
+  userId: string | undefined;
   date: Date;
   itemName: string;
   quantity: number;

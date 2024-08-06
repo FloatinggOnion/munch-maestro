@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 import {
 	Box,
@@ -18,8 +18,9 @@ import {
 	Select,
 	Option,
 } from "@mui/joy";
-import { Add, Remove } from "@mui/icons-material";
+import { Add, HourglassEmpty, Remove } from "@mui/icons-material";
 import SearchIcon from '@mui/icons-material/Search';
+import ErrorIcon from '@mui/icons-material/Error';
 
 import OrderTable from "../components/OrderTable";
 import OrderList from "../components/OrderList";
@@ -34,10 +35,13 @@ import {
 	setDoc,
 	deleteDoc,
 	getDoc,
+	where,
 } from "firebase/firestore";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Inventory {
 	id: string;
+	userId: string | undefined;
 	date: Date;
 	itemName: string;
 	quantity: number;
@@ -45,7 +49,6 @@ interface Inventory {
 
 export default function Home() {
 	const [inventory, setInventory] = useState<Inventory[]>([]);
-	const [filteredInventory, setFilteredInventory] = useState<Inventory[]>([]);
 	const [open, setOpen] = useState(false);
 	const [itemName, setItemName] = useState("");
 	const [quantity, setQuantity] = useState(0);
@@ -53,6 +56,8 @@ export default function Home() {
 	const [rowsPerPage, setRowsPerPage] = useState(10);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [statusFilter, setStatusFilter] = useState("all");
+
+	const { user, loading } = useAuth();
 
 	const handleChangePage = (newPage: number) => {
 		setPage(newPage);
@@ -63,37 +68,23 @@ export default function Home() {
 		setPage(1);
 	};
 
+	const filteredInventory = useMemo(() => {
+		return inventory.filter(item => {
+		  const matchesSearch = item.itemName.toLowerCase().includes(searchTerm.toLowerCase());
+		  const matchesStatus = 
+			statusFilter === "all" ||
+			(statusFilter === "low" && item.quantity <= 2) ||
+			(statusFilter === "medium" && item.quantity > 2 && item.quantity < 5) ||
+			(statusFilter === "high" && item.quantity >= 5);
+		  
+		  return matchesSearch && matchesStatus;
+		});
+	  }, [inventory, searchTerm, statusFilter]);
+
 	const paginatedInventory = inventory.slice(
 		(page - 1) * rowsPerPage,
 		page * rowsPerPage
 	);
-
-	
-	const filterInventory = () => {
-		let filtered = inventory;
-
-		// Apply search filter
-		if (searchTerm) {
-			filtered = filtered.filter((item) =>
-				item.itemName.toLowerCase().includes(searchTerm.toLowerCase())
-			);
-		}
-
-		// Apply status filter
-		if (statusFilter !== "all") {
-			filtered = filtered.filter((item) => {
-				if (statusFilter === "low") return item.quantity <= 2;
-				if (statusFilter === "medium")
-					return item.quantity > 2 && item.quantity < 5;
-				if (statusFilter === "high") return item.quantity >= 5;
-				return true;
-			});
-		}
-
-		setFilteredInventory(filtered);
-		setPage(1); // Reset to first page when filters change
-	};
-	
 
 	const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
 		setSearchTerm(event.target.value);
@@ -104,19 +95,19 @@ export default function Home() {
 		newValue: string | null
 	  ) => {
 		if (newValue !== null) {
+			console.log(newValue);
 		  setStatusFilter(newValue);
 		}
 	  };
 
-	useEffect(() => {
-		filterInventory();
-	}, [inventory, searchTerm, statusFilter]);
-
 
 	const updateInventory = async () => {
-		const snapshot = await getDocs(collection(firestore, "inventory"));
+		const userId = user?.uid;
+		const q = query(collection(firestore, "inventory"), where("userId", "==", userId));
+		const snapshot = await getDocs(q);
 		const inventoryList: Inventory[] = snapshot.docs.map((doc) => ({
 			id: doc.id,
+			userId: doc.data().userId,
 			date: doc.data().date.toDate(),
 			itemName: doc.data().itemName,
 			quantity: doc.data().quantity,
@@ -126,16 +117,18 @@ export default function Home() {
 
 	useEffect(() => {
 		updateInventory();
-	}, [inventory]);
+	}, []);
 
 	const addItem = async (item: Inventory) => {
-		const docRef = doc(firestore, "inventory", item.itemName);
+		const userId = user?.uid;
+		const docRef = doc(firestore, "inventory", `${userId}_${item.itemName}`);
 		const docSnap = await getDoc(docRef);
 		if (docSnap.exists()) {
 			const existingQuantity = docSnap.data().quantity;
 			await setDoc(
 				docRef,
 				{
+					userId: userId,
 					itemName: item.itemName,
 					quantity: existingQuantity + item.quantity,
 					date: new Date(),
@@ -144,6 +137,7 @@ export default function Home() {
 			);
 		} else {
 			await setDoc(docRef, {
+				userId: userId,
 				itemName: item.itemName,
 				quantity: item.quantity,
 				date: new Date(),
@@ -153,7 +147,8 @@ export default function Home() {
 	};
 
 	const removeItem = async (item: Inventory): Promise<void> => {
-		const docRef = doc(firestore, "inventory", item.itemName);
+		const userId = user?.uid;
+		const docRef = doc(firestore, "inventory", `${userId}_${item.itemName}`);
 		const docSnap = await getDoc(docRef);
 		if (docSnap.exists()) {
 			const existingQuantity = docSnap.data().quantity;
@@ -177,8 +172,10 @@ export default function Home() {
 	const handleClose = () => setOpen(false);
 
 	const handleAddItem = () => {
+		const userId = user?.uid;
 		addItem({
 			id: itemName, // Use itemName as the id
+			userId: userId, // Add the userId property
 			date: new Date(),
 			itemName,
 			quantity,
@@ -257,7 +254,7 @@ export default function Home() {
 							<Option value="high">High</Option>
 						</Select>
 					</Box>
-					<OrderTable
+					{paginatedInventory.length > 0 && (<OrderTable
 						rows={paginatedInventory}
 						onClick={removeItem}
 						page={page}
@@ -265,15 +262,21 @@ export default function Home() {
 						totalItems={filteredInventory.length}
 						onPageChange={handleChangePage}
 						onRowsPerPageChange={handleChangeRowsPerPage}
-					/>
-					<OrderList
+					/>)}
+					{paginatedInventory.length > 0 && (<OrderList
 						rows={paginatedInventory}
 						page={page}
 						rowsPerPage={rowsPerPage}
 						totalItems={filteredInventory.length}
 						onPageChange={handleChangePage}
 						onClick={removeItem}
-					/>
+					/>)}
+					{paginatedInventory.length === 0 && (
+						<div className="flex flex-col w-[70vw] h-full items-center justify-center p-4 m-4">
+							<ErrorIcon sx={{ fontSize: 60 }} />
+							<p className="text-2xl text-neutral-500">Nothing to see here.</p>
+						</div>
+					)}
 				</Box>
 				<Modal
 					open={open}
