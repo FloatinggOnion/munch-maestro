@@ -10,7 +10,7 @@ const layout = (props: Props) => {
   return (
     <html>
         <body>
-          <div className='flex flex-row-reverse'>
+          <div className='flex flex-row justify-center items-center h-screen w-screen'>
             <div className='h-screen w-[50%] bg-blue-200 hidden lg:flex'>
               <Image src={'/auth-image.jpg'} alt='auth-image' width={1000} height={1000} className='h-full object-cover' />
             </div>
